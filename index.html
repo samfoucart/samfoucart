@@ -2,21 +2,29 @@
 
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Startpage</title>
-  <meta name="description" content="Startpage">
-  <meta name="author" content="Sam Foucart">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css?family=Oswald">
+    <meta charset="utf-8">
+    <title>Startpage</title>
+    <meta name="description" content="Startpage">
+    <meta name="author" content="Sam Foucart">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Oswald">
+    <!-- Load an icon library to show a hamburger menu (bars) on small screens -->
+    <link rel="stylesheet" 
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">        
 </head>
 
 <body>
     <main>
         <div class="top-div">
             <div class="top-nav">
-                <ul class="top-nav">
+                <ul class="top-nav" id="topNav">
                     <li class="introduction">Hello, I am Sam Foucart</li>
+                    <li class="top-nav-overflow">
+                        <a href="javascript:void(0);" class="icon" onclick="topNavOverflow()">
+                            <i class="fa fa-bars"></i>
+                        </a>
+                    </li>
                     <li><a href="#contact">Contact</a></li>
                     <li><a href="#external">External</a></li>
                     <li><a href="#projects">Projects</a></li>

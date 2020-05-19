@@ -68,14 +68,40 @@ ul.top-nav li a.active {
 
 ul.top-nav li.introduction {
     float: left;
-    display: block;
+    display: block; 
     color: white;
     text-align: center;
     padding: 14px 16px;
     text-decoration: none;
 }
 
+/* Hide the link that should open and close the topnav on small screens */
+ul.top-nav .icon {
+    display: none;
+}
+
 @media screen and (max-width: 600px) {
-  ul.top-nav li.introduction, 
-  ul.top-nav li {float: none;}
+    ul.top-nav li {display: none;}
+    ul.introduction {float: left;}
+    ul.top-nav li.top-nav-overflow {
+        display: block;
+        float: right;
+    }
+    ul.top-nav .icon {
+        display: block;
+        float: right;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    ul.responsive.top-nav li {
+        float: none;
+        display: block;
+    }
+    
+    ul.responsive.top-nav .icon {
+        display: block;
+        float: right;
+    }
+    ul.responsive.introduction {float: left;}
 }
