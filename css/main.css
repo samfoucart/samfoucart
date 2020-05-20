@@ -33,40 +33,46 @@ main {
 }
 
 .top-div {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
-    grid-column-end: 5;
-    grid-column-start: 1;
-    text-align: center;
+    margin: 0;
+    padding: 0;
 }
 
-ul.top-nav {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background-color: #333;
+.top-nav {
+    position: fixed;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    top: 0;
+    overflow: hidden;
+    background-color: #333;
+    list-style-type: none;
 }
 
-ul.top-nav li {float: right;}
+.nav-items {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
 
-ul.top-nav li a {
+.top-nav li {float: right;}
+
+.top-nav li a {
   display: block;
   color: white;
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
+  float: none;
 }
 
-ul.top-nav li a:hover:not(.active) {background-color: #111;}
+.top-nav li a:hover:not(.active) {background-color: #111;}
 
-ul.top-nav li a.active {
+.top-nav li a.active {
     background-color: #D2A3A9;
     color: #111;
 }
 
-ul.top-nav li.introduction {
+.top-nav li.introduction {
     float: left;
     display: block; 
     color: white;
@@ -76,32 +82,34 @@ ul.top-nav li.introduction {
 }
 
 /* Hide the link that should open and close the topnav on small screens */
-ul.top-nav .icon {
+.top-nav .icon {
     display: none;
 }
 
+
 @media screen and (max-width: 600px) {
-    ul.top-nav li {display: none;}
-    ul.introduction {float: left;}
-    ul.top-nav li.top-nav-overflow {
+    .top-nav li {display: none;}
+    .introduction {float: left;}
+    .top-nav li.top-nav-overflow {
         display: block;
         float: right;
     }
-    ul.top-nav .icon {
+    .top-nav .icon {
         display: block;
         float: right;
     }
 }
 
 @media screen and (max-width: 600px) {
-    ul.responsive.top-nav li {
+    .responsive.nav-items li {
         float: none;
         display: block;
     }
     
-    ul.responsive.top-nav .icon {
+    .responsive.nav-items .icon {
         display: block;
         float: right;
     }
-    ul.responsive.introduction {float: left;}
+
+    .responsive.nav-items .introduction {float: left;}
 }
