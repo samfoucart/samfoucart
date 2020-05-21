@@ -87,7 +87,7 @@ main {
 }
 
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 736px) {
     .top-nav li {display: none;}
     .introduction {float: left;}
     .top-nav li.top-nav-overflow {
@@ -100,7 +100,7 @@ main {
     }
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 736px) {
     .responsive.nav-items li {
         float: none;
         display: block;
