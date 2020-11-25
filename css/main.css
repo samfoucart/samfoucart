@@ -86,6 +86,12 @@ main {
     display: none;
 }
 
+canvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+}
+
 
 @media screen and (max-width: 1080px) {
     .top-nav li {display: none;}
