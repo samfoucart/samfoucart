@@ -40,11 +40,9 @@ function createProgram(gl, vertexShader, fragmentShader) {
 function initializeRenderer() {
     var canvas = document.querySelector("#WebGL-canvas");
     var gl = canvas.getContext("webgl");
-    var vertexShaderSource = document.querySelector("#vertex-shader-2d").text;
-    var fragmentShaderSource = document.querySelector("#fragment-shader-2d").text;
 
-    var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    var vertexShader = createShader(gl, gl.VERTEX_SHADER, getSourceSynch("glsl/2d.vert"));
+    var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, getSourceSynch("glsl/2d.frag"));
 
     var program = createProgram(gl, vertexShader, fragmentShader);
 
@@ -105,5 +103,14 @@ function resize(canvas) {
         canvas.height = displayHeight;
     }
 }
+
+// Citation
+// wglb. "How to include shaders." Khronos Forums https://community.khronos.org/t/how-to-include-shaders/2591/3
+var getSourceSynch = function(url) {
+    var req = new XMLHttpRequest();
+    req.open("GET", url, false);
+    req.send(null);
+    return (req.status == 200) ? req.responseText : null;
+};
 
 initializeRenderer()
