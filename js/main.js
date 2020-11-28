@@ -35,10 +35,10 @@ function initializeRenderer() {
 
     // Uniforms for each object
     let sphereUniforms = {
-        u_colorMult: [0.5, 1, .5, 1],
+        u_colorMult: [1, 1, .5, 1],
         u_matrix: m4.identity(),
     }
-    let sphereTranslation = [0, 0, 0];
+    let sphereTranslation = [0, 5, 60];
 
     let objectsToDraw = [
         {
@@ -65,6 +65,8 @@ function initializeRenderer() {
 
         gl.enable(gl.CULL_FACE);
         gl.enable(gl.DEPTH_TEST);
+
+        gl.clearColor(0, 0, 0, 0);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
