@@ -8,109 +8,101 @@ function topNavOverflow() {
     }
 }
 
-// Citation WebGL Fundamentals
 
-function createShader(gl, type, source) {
-    let shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    if (success) {
-        return shader;
-    }
-
-    console.log(gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-}
-
-function createProgram(gl, vertexShader, fragmentShader) {
-    let program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    let success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (success) {
-        return program;
-    }
-
-    console.log(gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
-}
-
+// Almost All of this code comes from Gregg Tavares
+// Gregg Tavares. "WebGL - Drawing Multiple Things." WebGL Fundamentals.
+// https://webglfundamentals.org/webgl/lessons/webgl-drawing-multiple-things.html Accessed November 2020
 function initializeRenderer() {
-    var canvas = document.querySelector("#WebGL-canvas");
-    var gl = canvas.getContext("webgl");
+    let canvas = document.querySelector("#WebGL-canvas");
+    let gl = canvas.getContext("webgl");
+    if (!gl) {
+        let ctx = canvas.getContext("2d");
+        ctx.font = "30px Times New Roman";
+        ctx.fillText("Browser Does Not Support WebGL", canvas.width / 2, canvas.height / 2)
+        return;
+    }
 
-    var vertexShader = createShader(gl, gl.VERTEX_SHADER, getSourceSynch("glsl/2d.vert"));
-    var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, getSourceSynch("glsl/2d.frag"));
-
-    var program = createProgram(gl, vertexShader, fragmentShader);
-
-    var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-
-    var positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    // three 2d points
-    var positions = [
-        0, 0,
-        0, 0.5,
-        0.7, 0,
+    let sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(gl, 10, 12, 6);
+    let shapes = [
+        sphereBufferInfo,
     ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    let programInfo = webglUtils.createProgramInfo(gl, ["vertex-shader-3d", "fragment-shader-3d"]);
 
-    // Clear the canvas
-    gl.clearColor(0 , 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    let cameraAngleRadians = 0.0;
+    let fieldOfViewRadians = Math.PI / 3;
+    let cameraHeight = 50;
 
-    // Tell it to use our program (pair of shaders)
-    gl.useProgram(program);
+    // Uniforms for each object
+    let sphereUniforms = {
+        u_colorMult: [0.5, 1, .5, 1],
+        u_matrix: m4.identity(),
+    }
+    let sphereTranslation = [0, 0, 0];
 
-    gl.enableVertexAttribArray(positionAttributeLocation);
+    let objectsToDraw = [
+        {
+            programInfo: programInfo,
+            bufferInfo: sphereBufferInfo,
+            uniforms: sphereUniforms,
+        }
+    ];
 
-    // Bind the position buffer.
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    function computeMatrix(viewProjectionMatrix, translation, xRotation, yRotation) {
+        let matrix = m4.translate(viewProjectionMatrix, translation[0], translation[1], translation[2]);
+        matrix = m4.xRotate(matrix, xRotation);
+        return m4.yRotate(matrix, yRotation);
+    }
 
-// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-    var size = 2;          // 2 components per iteration
-    var type = gl.FLOAT;   // the data is 32bit floats
-    var normalize = false; // don't normalize the data
-    var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-    var offset = 0;        // start at the beginning of the buffer
-    gl.vertexAttribPointer(
-        positionAttributeLocation, size, type, normalize, stride, offset)
 
-    var primitiveType = gl.TRIANGLES;
-    var offset = 0;
-    var count = 3;
-    resize(gl.canvas);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.drawArrays(primitiveType, offset, count);
-}
+    requestAnimationFrame(drawScene);
 
-function resize(canvas) {
-    // Lookup the size the browser is displaying the canvas.
-    var displayWidth  = canvas.clientWidth;
-    var displayHeight = canvas.clientHeight;
+    function drawScene(time) {
+        time *= 0.005;
 
-    // Check if the canvas is not the same size.
-    if (canvas.width  != displayWidth ||
-        canvas.height != displayHeight) {
+        webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-        // Make the canvas the same size
-        canvas.width  = displayWidth;
-        canvas.height = displayHeight;
+        gl.enable(gl.CULL_FACE);
+        gl.enable(gl.DEPTH_TEST);
+
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+        let projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, .2, 2000);
+
+        let cameraPosition = [0, 0, 100];
+        let target = [0, 0, 0];
+        let up = [0, 1, 0];
+        let cameraMatrix = m4.lookAt(cameraPosition, target, up);
+
+        let viewMatrix = m4.inverse(cameraMatrix);
+
+        let viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
+
+        let sphereXRotation = time;
+        let sphereYRotation = time;
+
+        sphereUniforms.u_matrix = computeMatrix(viewProjectionMatrix, sphereTranslation, sphereXRotation, sphereYRotation);
+
+        objectsToDraw.forEach((object) => {
+            let programInfo = object.programInfo;
+            let bufferInfo = object.bufferInfo;
+
+            gl.useProgram(programInfo.program);
+
+            webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+
+            webglUtils.setUniforms(programInfo, object.uniforms);
+
+            gl.drawArrays(gl.TRIANGLES, 0, bufferInfo.numElements);
+        });
+
+        requestAnimationFrame(drawScene);
     }
 }
 
 // Citation
 // wglb. "How to include shaders." Khronos Forums https://community.khronos.org/t/how-to-include-shaders/2591/3
-var getSourceSynch = function(url) {
-    var req = new XMLHttpRequest();
-    req.open("GET", url, false);
-    req.send(null);
-    return (req.status == 200) ? req.responseText : null;
-};
 
 initializeRenderer()
