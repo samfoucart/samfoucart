@@ -57,12 +57,13 @@ main {
 .top-nav li {float: right;}
 
 .top-nav li a {
-  display: block;
-  color: white;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  float: none;
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    float: none;
+    font-size: 16pt;
 }
 
 .top-nav li a:hover:not(.active) {background-color: #111;}
@@ -79,11 +80,16 @@ main {
     text-align: center;
     padding: 14px 16px;
     text-decoration: none;
+    font-size: 16pt;
 }
 
 /* Hide the link that should open and close the topnav on small screens */
 .top-nav .icon {
     display: none;
+}
+
+.content-body {
+    padding: 20px;
 }
 
 canvas {
