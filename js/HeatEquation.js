@@ -112,9 +112,7 @@ function initializeRenderer() {
             worldMatrix = m4.multiply(m4.xRotation(delta[1] * 5), worldMatrix);
             worldMatrix = m4.multiply(m4.yRotation(delta[0] * 5), worldMatrix);
 
-            lastPos.pos;
-
-            requestAnimationFrame(drawScene);
+            lastPos = pos;
         }
     }
 
