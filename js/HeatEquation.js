@@ -70,14 +70,14 @@ function initializeRenderer() {
         let cameraMatrix = m4.lookAt(cameraPosition, target, up);
 
         let viewMatrix = m4.inverse(cameraMatrix);
-
+        //viewMatrix = m4.multiply(viewMatrix, worldMatrix);
         let viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
 
         let sphereXRotation = 0;
         let sphereYRotation = 0;
 
         let sphereMatrix = m4.multiply(viewProjectionMatrix, worldMatrix);
-        sphereUniforms.u_matrix = computeMatrix(sphereMatrix, sphereTranslation, sphereXRotation, sphereYRotation);
+        sphereUniforms.u_matrix = sphereMatrix;
 
         objectsToDraw.forEach((object) => {
             let programInfo = object.programInfo;
