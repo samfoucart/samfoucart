@@ -285,7 +285,7 @@ function generatePoints(initialDistribution, numDivisions) {
         for (let t = 0; t < numDivisions; ++t) {
             let normT = t / numDivisions;
             vertices.push(x - (numDivisions / 2));
-            vertices.push(30 * Math.cos(Math.PI * normX) * Math.exp(- (Math.pow(Math.PI, 2)) * normT / 3.5));
+            vertices.push(30 * Math.cos(Math.PI * 4 * normX) * Math.exp(- (Math.pow(Math.PI, 2)) * normT / 3.5));
             vertices.push(t - (numDivisions / 2));
         }
     }
