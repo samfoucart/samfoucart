@@ -13,8 +13,14 @@ function initializeRenderer() {
     }
 
     let sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(gl, 10, 12, 6);
+    let meshPoints = generatePoints();
+    let arrays = {
+        position: {numComponents: 3, data: meshPoints},
+    }
+    let meshBufferInfo = webglUtils.createBufferInfoFromArrays(arrays);
     let shapes = [
         sphereBufferInfo,
+        meshBufferInfo,
     ];
 
     let programInfo = webglUtils.createProgramInfo(gl, ["vertex-shader-3d", "fragment-shader-3d"]);
@@ -28,6 +34,11 @@ function initializeRenderer() {
         u_colorMult: [1, 1, .5, 1],
         u_matrix: m4.identity(),
     }
+
+    let meshUniforms = {
+        u_colorMult: [1, 1, .5, 1],
+        u_matrix: m4.identity(),
+    }
     let sphereTranslation = [0, 5, 60];
 
     let objectsToDraw = [
@@ -35,6 +46,11 @@ function initializeRenderer() {
             programInfo: programInfo,
             bufferInfo: sphereBufferInfo,
             uniforms: sphereUniforms,
+        },
+        {
+            programInfo: programInfo,
+            bufferInfo: meshBufferInfo,
+            uniforms: meshUniforms,
         }
     ];
 
@@ -62,7 +78,7 @@ function initializeRenderer() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-        let projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, .2, 2000);
+        let projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
         let cameraPosition = [0, 0, 100];
         let target = [0, 0, 0];
@@ -240,6 +256,17 @@ const v2 = (function() {
         distanceToSegmentSq: distanceToSegmentSq,
     };
 }());
+
+let numDivisions = 100;
+function generatePoints(initialDistribution) {
+    let vertices = new Float32Array(numDivisions * numDivisions);
+    for (let x = 0; x < 1; x = x + (1 / numDivisions)) {
+        for (let t = 0; t < numDivisions; t = t + (1 / numDivisions)) {
+            vertices[x + t] = Math.cos(Math.PI * x) * Math.exp(- (Math.pow(Math.PI, 2)) * t);
+        }
+    }
+    return vertices;
+}
 
 
 // Citation
