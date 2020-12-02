@@ -13,9 +13,12 @@ function initializeRenderer() {
     }
 
     let sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(gl, 10, 12, 6);
-    let meshPoints = generatePoints();
+    let numDivisions = 100;
+    let meshPoints = generatePoints(0, numDivisions);
+    let meshIndices = triangulateMesh(meshPoints, numDivisions);
     let arrays = {
         position: {numComponents: 3, data: meshPoints},
+        indices: {numComponents: 3, data: meshIndices},
     }
     let meshBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
     let shapes = [
@@ -52,7 +55,6 @@ function initializeRenderer() {
             programInfo: meshProgramInfo,
             bufferInfo: meshBufferInfo,
             uniforms: meshUniforms,
-            primitive: gl.LINE_STRIP,
         }
     ];
 
@@ -110,10 +112,17 @@ function initializeRenderer() {
 
             webglUtils.setUniforms(programInfo, object.uniforms);
 
+
+            let primitive;
             if (object.primitive) {
-                gl.drawArrays(object.primitive, 0, bufferInfo.numElements);
+                primitive = object.primitive;
             } else {
-                gl.drawArrays(gl.TRIANGLES, 0, bufferInfo.numElements);
+                primitive = gl.TRIANGLES;
+            }
+            if (object.bufferInfo.indices) {
+                gl.drawElements(primitive, object.bufferInfo.numElements, gl.UNSIGNED_SHORT, 0);
+            } else {
+                gl.drawArrays(primitive, 0, object.bufferInfo.numElements);
             }
 
         });
@@ -267,21 +276,52 @@ const v2 = (function() {
     };
 }());
 
-let numDivisions = 100;
-function generatePoints(initialDistribution) {
+
+function generatePoints(initialDistribution, numDivisions) {
     let vertices = [];
     for (let x = 0; x < numDivisions; ++x) {
         let normX = x / numDivisions;
         for (let t = 0; t < numDivisions; ++t) {
             let normT = t / numDivisions;
             vertices.push(x - (numDivisions / 2));
-            //vertices[(x * numDivisions) + (3 * t) + 1]
             vertices.push(30 * Math.cos(Math.PI * normX) * Math.exp(- (Math.pow(Math.PI, 2)) * normT));
-            //vertices.push(1)
             vertices.push(t - (numDivisions / 2));
         }
     }
     return vertices;
+}
+
+function triangulateMesh(dataVertices, numDivisions) {
+    if ((dataVertices.length < 6) || ((dataVertices.length % 3) !== 0)) {
+        return;
+    }
+    let indices = [];
+    for (let x = 0; x < numDivisions - 1; ++x) {
+        for (let t = 0; t < numDivisions - 1; ++t) {
+            // First Point of triangle
+            indices.push((numDivisions * x) + (t));
+            indices.push((numDivisions * (x + 1)) + (t + 1));
+            indices.push((numDivisions * x) + (t + 1));
+
+
+            indices.push((numDivisions * x) + (t));
+            indices.push((numDivisions * (x + 1)) + t);
+            indices.push((numDivisions * (x + 1)) + (t + 1));
+
+            // First Point of triangle
+            indices.push((numDivisions * x) + (t));
+            indices.push((numDivisions * x) + (t + 1));
+            indices.push((numDivisions * (x + 1)) + (t + 1));
+
+
+            indices.push((numDivisions * x) + (t));
+            indices.push((numDivisions * (x + 1)) + (t + 1));
+            indices.push((numDivisions * (x + 1)) + t);
+
+        }
+    }
+    return indices;
+
 }
 
 const fragmentPassThrough = `
