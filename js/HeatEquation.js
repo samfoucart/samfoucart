@@ -299,22 +299,23 @@ function triangulateMesh(dataVertices, numDivisions) {
     let indices = [];
     for (let x = 0; x < numDivisions - 1; ++x) {
         for (let t = 0; t < numDivisions - 1; ++t) {
-            // First Point of triangle
+            // Note: for the surface to be visible on both sides, we require a triangle on each side of the surface
+            // Triangle 1
             indices.push((numDivisions * x) + (t));
             indices.push((numDivisions * (x + 1)) + (t + 1));
             indices.push((numDivisions * x) + (t + 1));
 
-
+            // Triangle 2
             indices.push((numDivisions * x) + (t));
             indices.push((numDivisions * (x + 1)) + t);
             indices.push((numDivisions * (x + 1)) + (t + 1));
 
-            // First Point of triangle
+            // Triangle 3
             indices.push((numDivisions * x) + (t));
             indices.push((numDivisions * x) + (t + 1));
             indices.push((numDivisions * (x + 1)) + (t + 1));
 
-
+            // Triangle 4
             indices.push((numDivisions * x) + (t));
             indices.push((numDivisions * (x + 1)) + (t + 1));
             indices.push((numDivisions * (x + 1)) + t);
