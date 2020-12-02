@@ -17,13 +17,14 @@ function initializeRenderer() {
     let arrays = {
         position: {numComponents: 3, data: meshPoints},
     }
-    let meshBufferInfo = webglUtils.createBufferInfoFromArrays(arrays);
+    let meshBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
     let shapes = [
         sphereBufferInfo,
         meshBufferInfo,
     ];
 
-    let programInfo = webglUtils.createProgramInfo(gl, ["vertex-shader-3d", "fragment-shader-3d"]);
+    let sphereProgramInfo = webglUtils.createProgramInfo(gl, ["vertex-shader-3d", "fragment-shader-3d"]);
+    let meshProgramInfo = webglUtils.createProgramInfo(gl, [vertexPassThrough, fragmentPassThrough]);
 
     let cameraAngleRadians = 0.0;
     let fieldOfViewRadians = Math.PI / 3;
@@ -36,21 +37,22 @@ function initializeRenderer() {
     }
 
     let meshUniforms = {
-        u_colorMult: [1, 1, .5, 1],
+        u_colorMult: [1, 1, 1, 1],
         u_matrix: m4.identity(),
     }
     let sphereTranslation = [0, 5, 60];
 
     let objectsToDraw = [
         {
-            programInfo: programInfo,
+            programInfo: sphereProgramInfo,
             bufferInfo: sphereBufferInfo,
             uniforms: sphereUniforms,
         },
         {
-            programInfo: programInfo,
+            programInfo: meshProgramInfo,
             bufferInfo: meshBufferInfo,
             uniforms: meshUniforms,
+            primitive: gl.LINE_STRIP,
         }
     ];
 
@@ -78,7 +80,7 @@ function initializeRenderer() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-        let projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
+        let projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, .2, 2000);
 
         let cameraPosition = [0, 0, 100];
         let target = [0, 0, 0];
@@ -93,7 +95,10 @@ function initializeRenderer() {
         let sphereYRotation = 0;
 
         let sphereMatrix = m4.multiply(viewProjectionMatrix, worldMatrix);
+        //sphereMatrix = m4.scale(sphereMatrix, 1)
+        //sphereMatrix = m4.multiply()
         sphereUniforms.u_matrix = sphereMatrix;
+        meshUniforms.u_matrix = sphereMatrix;
 
         objectsToDraw.forEach((object) => {
             let programInfo = object.programInfo;
@@ -105,7 +110,12 @@ function initializeRenderer() {
 
             webglUtils.setUniforms(programInfo, object.uniforms);
 
-            gl.drawArrays(gl.TRIANGLES, 0, bufferInfo.numElements);
+            if (object.primitive) {
+                gl.drawArrays(object.primitive, 0, bufferInfo.numElements);
+            } else {
+                gl.drawArrays(gl.TRIANGLES, 0, bufferInfo.numElements);
+            }
+
         });
 
         requestAnimationFrame(drawScene);
@@ -259,14 +269,41 @@ const v2 = (function() {
 
 let numDivisions = 100;
 function generatePoints(initialDistribution) {
-    let vertices = new Float32Array(numDivisions * numDivisions);
-    for (let x = 0; x < 1; x = x + (1 / numDivisions)) {
-        for (let t = 0; t < numDivisions; t = t + (1 / numDivisions)) {
-            vertices[x + t] = Math.cos(Math.PI * x) * Math.exp(- (Math.pow(Math.PI, 2)) * t);
+    let vertices = [];
+    for (let x = 0; x < numDivisions; ++x) {
+        let normX = x / numDivisions;
+        for (let t = 0; t < numDivisions; ++t) {
+            let normT = t / numDivisions;
+            vertices.push(x - (numDivisions / 2));
+            //vertices[(x * numDivisions) + (3 * t) + 1]
+            vertices.push(30 * Math.cos(Math.PI * normX) * Math.exp(- (Math.pow(Math.PI, 2)) * normT));
+            //vertices.push(1)
+            vertices.push(t - (numDivisions / 2));
         }
     }
     return vertices;
 }
+
+const fragmentPassThrough = `
+    precision mediump float;
+    
+    uniform vec4 u_colorMult;
+    void main () {
+        gl_FragColor = vec4(.5, 0, .5, 1) * u_colorMult;
+    }
+`;
+
+const vertexPassThrough = `
+    attribute vec4 a_position;
+
+    uniform mat4 u_matrix;
+
+    void main() {
+        // Multiply the position by the matrix.
+        gl_Position = u_matrix * a_position;
+    }
+`;
+
 
 
 // Citation
