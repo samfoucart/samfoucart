@@ -24,7 +24,7 @@ function initializeRenderer() {
     ];
 
     let sphereProgramInfo = webglUtils.createProgramInfo(gl, [sphereVertexShader, sphereFragmentShader]);
-    let meshProgramInfo = webglUtils.createProgramInfo(gl, [vertexPassThrough, fragmentPassThrough]);
+    let meshProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
 
     let cameraAngleRadians = 0.0;
     let fieldOfViewRadians = Math.PI / 3;
@@ -287,20 +287,45 @@ function generatePoints(initialDistribution) {
 const fragmentPassThrough = `
     precision mediump float;
     
-    uniform vec4 u_colorMult;
     void main () {
-        gl_FragColor = vec4(.5, 0, .5, 1) * u_colorMult;
+        gl_FragColor = vec4(.5, 0, .5, 1);
     }
 `;
 
 const vertexPassThrough = `
     attribute vec4 a_position;
 
+    void main() {
+        gl_Position = a_position;
+    }
+`;
+
+const meshFragmentShader = `
+    precision mediump float;
+    
+    varying vec4 v_color;
+    
+    uniform vec4 u_colorMult;
+    void main () {
+        gl_FragColor = v_color * u_colorMult;
+    }
+`;
+
+const meshVertexShader = `
+    attribute vec4 a_position;
+
     uniform mat4 u_matrix;
+    
+    varying vec4 v_color;
 
     void main() {
         // Multiply the position by the matrix.
         gl_Position = u_matrix * a_position;
+        
+        v_color.x = - a_position.y;
+        v_color.y = 0.0;
+        v_color.z = a_position.y;
+        v_color.w = 1.0;
     }
 `;
 
