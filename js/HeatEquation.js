@@ -13,14 +13,26 @@ function initializeRenderer() {
     }
 
     let sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(gl, 10, 12, 6);
+    let initialDistribution = generateInitialDistributionDebug();
+    let numCoefficients = 10;
+    let fourierSeriesCoefficients = calculateFourierSeriesCoefficients(initialDistribution, numCoefficients);
     let numDivisions = 100;
-    let meshPoints = generatePoints(0, numDivisions);
+    let meshPoints = generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions);
     let meshIndices = triangulateMesh(meshPoints, numDivisions);
     let arrays = {
         position: {numComponents: 3, data: meshPoints},
         indices: {numComponents: 3, data: meshIndices},
     }
     let meshBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
+
+    let gridIndices = generateGridIndices(meshPoints, numDivisions);
+    //arrays.indices = {numComponents: 3, data:gridIndices};
+    arrays = {
+        position: {numComponents: 3, data: meshPoints},
+        indices: {numComponents: 3, data: gridIndices},
+    }
+    let gridBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
+
     let shapes = [
         sphereBufferInfo,
         meshBufferInfo,
@@ -28,6 +40,7 @@ function initializeRenderer() {
 
     let sphereProgramInfo = webglUtils.createProgramInfo(gl, [sphereVertexShader, sphereFragmentShader]);
     let meshProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
+    let gridProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
 
     let cameraAngleRadians = 0.0;
     let fieldOfViewRadians = Math.PI / 3;
@@ -43,6 +56,11 @@ function initializeRenderer() {
         u_colorMult: [1, 1, 1, 1],
         u_matrix: m4.identity(),
     }
+
+    let gridUniforms = {
+        u_colorMult: [.25, .25, .25, 1],
+        u_matrix: m4.identity(),
+    }
     let sphereTranslation = [0, 5, 60];
 
     let objectsToDraw = [
@@ -56,6 +74,11 @@ function initializeRenderer() {
             programInfo: meshProgramInfo,
             bufferInfo: meshBufferInfo,
             uniforms: meshUniforms,
+        },
+        {
+            programInfo: gridProgramInfo,
+            bufferInfo: gridBufferInfo,
+            uniforms: gridUniforms,
         }
     ];
 
@@ -278,18 +301,68 @@ const v2 = (function() {
 }());
 
 
-function generatePoints(initialDistribution, numDivisions) {
+function generatePointsDebug(initialDistribution, numDivisions) {
     let vertices = [];
     for (let x = 0; x < numDivisions; ++x) {
         let normX = x / numDivisions;
         for (let t = 0; t < numDivisions; ++t) {
             let normT = t / numDivisions;
             vertices.push(x - (numDivisions / 2));
-            vertices.push(30 * Math.cos(Math.PI * 4 * normX) * Math.exp(- (Math.pow(Math.PI, 2)) * normT / 3.5));
+            vertices.push(30 * Math.cos(Math.PI * 4 * normX) * Math.exp(- (Math.pow(Math.PI, 2)) * normT / 1.5));
             vertices.push(t - (numDivisions / 2));
         }
     }
     return vertices;
+}
+
+function generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions, diffusivity = .6) {
+    let vertices = [];
+    for (let x = 0; x < numDivisions; ++x) {
+        let normX = x / numDivisions;
+        for (let t = 0; t < numDivisions; ++t) {
+            let normT = t / numDivisions;
+            vertices.push(x - (numDivisions / 2));
+            let partialSum = fourierSeriesCoefficients[0];
+            for (let n = 1; n < fourierSeriesCoefficients.length; ++n) {
+                let lambda = (n * Math.PI);
+                let a = fourierSeriesCoefficients[n];
+                let k = diffusivity;
+                partialSum += a * Math.cos(lambda * normX) * Math.exp(-lambda * lambda * k * normT);
+            }
+            vertices.push(partialSum);
+            vertices.push(t - (numDivisions / 2));
+        }
+    }
+    return vertices;
+}
+
+function generateInitialDistributionDebug(numPoints = 100) {
+    let initialDistribution = [];
+    for (let i = 0; i < numPoints; ++i) {
+        let normI = i / numPoints;
+        let lessThanHalf = normI <= .5;
+        initialDistribution.push(lessThanHalf);
+    }
+    return initialDistribution;
+}
+
+function calculateFourierSeriesCoefficients(initialDistribution, numCoefficients) {
+    let coefficients = [];
+
+    let average = 0;
+    for (let i = 0; i < initialDistribution.length; ++i) {
+        average += initialDistribution[i];
+    }
+    coefficients.push(average / initialDistribution.length);
+
+    for (let n = 1; n < numCoefficients; ++n) {
+        let sum = 0;
+        for (let i = 0; i < initialDistribution.length; ++i) {
+            sum += initialDistribution[i] * Math.cos(n * Math.PI * i / initialDistribution.length);
+        }
+        coefficients.push(2 * sum);
+    }
+    return coefficients;
 }
 
 function triangulateMesh(dataVertices, numDivisions) {
@@ -323,7 +396,20 @@ function triangulateMesh(dataVertices, numDivisions) {
         }
     }
     return indices;
+}
 
+function generateGridIndices(dataVertices, numDivisions) {
+    let indices = [];
+    for (let x = 0; x < numDivisions - 1; ++x) {
+        for (let t = 0; t < numDivisions - 1; ++t) {
+            indices.push((numDivisions * x) + (t));
+            indices.push((numDivisions * (x + 1)) + (t));
+
+            indices.push((numDivisions * x) + (t));
+            indices.push((numDivisions * x) + (t + 1));
+        }
+    }
+    return indices;
 }
 
 const fragmentPassThrough = `
@@ -399,7 +485,7 @@ const sphereFragmentShader = `
     void main() {
         gl_FragColor = v_color * u_colorMult;
     }
-`
+`;
 
 
 
