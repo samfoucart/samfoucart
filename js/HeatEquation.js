@@ -449,14 +449,24 @@ const meshVertexShader = `
     
     varying vec4 v_color;
 
+    vec3 lerpRedToBlue(float amount) {
+        vec3 red = vec3(1.0, 0.0, 0.0);
+        vec3 blue = vec3(0.0, 0.0, 1.0);
+        vec3 intermediate = (amount * red) + ((1.0 - amount) * blue);
+        return intermediate;
+    }
+        
     void main() {
         // Multiply the position by the matrix.
         gl_Position = u_matrix * a_position;
         
-        v_color.x = .5;
-        v_color.y = 0.0;
-        v_color.z = .5;
-        v_color.w = 1.0;
+        //v_color.x = .5;
+        //v_color.y = 0.0;
+        //v_color.z = .5;
+        //v_color.w = 1.0;
+
+        v_color.rgb = lerpRedToBlue((a_position.y + .5));
+        v_color.a = 1.0;
     }
 `;
 
