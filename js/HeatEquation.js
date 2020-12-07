@@ -14,10 +14,11 @@ function initializeRenderer() {
 
     let sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(gl, 10, 12, 6);
     let initialDistribution = generateInitialDistributionDebug();
-    let numCoefficients = 10;
+    let numCoefficients = 100;
     let fourierSeriesCoefficients = calculateFourierSeriesCoefficients(initialDistribution, numCoefficients);
     let numDivisions = 100;
     let meshPoints = generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions);
+    //let meshPoints = generatePointsDebug(initialDistribution, numDivisions);
     let meshIndices = triangulateMesh(meshPoints, numDivisions);
     let arrays = {
         position: {numComponents: 3, data: meshPoints},
@@ -79,6 +80,7 @@ function initializeRenderer() {
             programInfo: gridProgramInfo,
             bufferInfo: gridBufferInfo,
             uniforms: gridUniforms,
+            primitive: gl.LINES,
         }
     ];
 
@@ -108,7 +110,7 @@ function initializeRenderer() {
         let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
         let projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, .2, 2000);
 
-        let cameraPosition = [0, 0, 100];
+        let cameraPosition = [0, 0, 2];
         let target = [0, 0, 0];
         let up = [0, 1, 0];
         let cameraMatrix = m4.lookAt(cameraPosition, target, up);
@@ -125,6 +127,7 @@ function initializeRenderer() {
         //sphereMatrix = m4.multiply()
         sphereUniforms.u_matrix = sphereMatrix;
         meshUniforms.u_matrix = sphereMatrix;
+        gridUniforms.u_matrix = sphereMatrix;
 
         objectsToDraw.forEach((object) => {
             let programInfo = object.programInfo;
@@ -307,9 +310,9 @@ function generatePointsDebug(initialDistribution, numDivisions) {
         let normX = x / numDivisions;
         for (let t = 0; t < numDivisions; ++t) {
             let normT = t / numDivisions;
-            vertices.push(x - (numDivisions / 2));
-            vertices.push(30 * Math.cos(Math.PI * 4 * normX) * Math.exp(- (Math.pow(Math.PI, 2)) * normT / 1.5));
-            vertices.push(t - (numDivisions / 2));
+            vertices.push(normX - .5);
+            vertices.push(Math.cos(Math.PI * 4 * normX) * Math.exp(- (Math.pow(Math.PI, 2)) * normT / 1.5));
+            vertices.push(normT - .5);
         }
     }
     return vertices;
@@ -321,7 +324,7 @@ function generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisio
         let normX = x / numDivisions;
         for (let t = 0; t < numDivisions; ++t) {
             let normT = t / numDivisions;
-            vertices.push(x - (numDivisions / 2));
+            vertices.push(normX - .5);
             let partialSum = fourierSeriesCoefficients[0];
             for (let n = 1; n < fourierSeriesCoefficients.length; ++n) {
                 let lambda = (n * Math.PI);
@@ -329,8 +332,8 @@ function generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisio
                 let k = diffusivity;
                 partialSum += a * Math.cos(lambda * normX) * Math.exp(-lambda * lambda * k * normT);
             }
-            vertices.push(partialSum);
-            vertices.push(t - (numDivisions / 2));
+            vertices.push(partialSum / initialDistribution.length);
+            vertices.push(normT - .5);
         }
     }
     return vertices;
@@ -450,9 +453,9 @@ const meshVertexShader = `
         // Multiply the position by the matrix.
         gl_Position = u_matrix * a_position;
         
-        v_color.x = - a_position.y;
+        v_color.x = .5;
         v_color.y = 0.0;
-        v_color.z = a_position.y;
+        v_color.z = .5;
         v_color.w = 1.0;
     }
 `;
