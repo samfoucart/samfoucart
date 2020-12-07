@@ -450,8 +450,8 @@ const meshVertexShader = `
     varying vec4 v_color;
 
     vec3 lerpRedToBlue(float amount) {
-        vec3 red = vec3(1.0, 0.0, 0.0);
-        vec3 blue = vec3(0.0, 0.0, 1.0);
+        vec3 red = vec3(.6, 0.0, 0.1);
+        vec3 blue = vec3(0.1, 0.1, .6);
         vec3 intermediate = (amount * red) + ((1.0 - amount) * blue);
         return intermediate;
     }
