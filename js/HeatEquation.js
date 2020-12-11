@@ -401,6 +401,33 @@ function triangulateMesh(dataVertices, numDivisions) {
     return indices;
 }
 
+function generateNormals(dataVertices, numDivisions) {
+    function cross(vec1, vec2) {
+        return [(vec1[1] * vec2[2]) - (vec1[2] * vec1[1]),
+            (vec1[2] * vec2[0]) - (vec1[0] * vec1[2]),
+            (vec1[0] * vec2[1]) - (vec1[1] * vec1[0])]
+    }
+    let normals = [];
+    for (let x = 0; x < numDivisions - 1; ++x) {
+        let normX = x / numDivisions;
+        for (let t = 0; t < numDivisions - 1; ++x) {
+            let normT = t / numDivisions;
+            // First height
+            let value0 = dataVertices[(numDivisions * x) + (t)];
+            // height forwards
+            let value1 = dataVertices[(numDivisions * (x + 1)) + (t)];
+            // height left
+            let value2 = dataVertices[(numDivisions * x) + (t) + 1];
+
+            let partialX = [1, value1 - value0, 0];
+            let partialT = [0, value2 - value0, 1];
+            let crossProduct = cross(partialX, partialT);
+            normals.push(crossProduct[0], crossProduct[1], crossProduct[2]);
+        }
+    }
+    return normals;
+}
+
 function generateGridIndices(dataVertices, numDivisions) {
     let indices = [];
     for (let x = 0; x < numDivisions - 1; ++x) {
