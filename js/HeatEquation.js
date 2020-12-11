@@ -407,24 +407,32 @@ function generateNormals(dataVertices, numDivisions) {
             (vec1[2] * vec2[0]) - (vec1[0] * vec1[2]),
             (vec1[0] * vec2[1]) - (vec1[1] * vec1[0])]
     }
+    function calculateNormal(dataVertices, x, nextX, t, nextT) {
+        let value0 = dataVertices[x + t];
+        // height forwards
+        let value1 = dataVertices[nextX + t];
+        // height left
+        let value2 = dataVertices[x + nextT];
+
+        let partialX = [nextX - x, value1 - value0, 0];
+        let partialT = [0, value2 - value0, nextT - t];
+        let crossProduct = cross(partialX, partialT);
+        let normCross = Math.sqrt((crossProduct[0] * crossProduct[0])
+            + (crossProduct[1] * crossProduct[1])
+            + (crossProduct[2] * crossProduct[2]));
+        normals.push(crossProduct[0] / normCross, crossProduct[1] / normCross, crossProduct[2] / normCross);
+    }
     let normals = [];
     for (let x = 0; x < numDivisions - 1; ++x) {
-        let normX = x / numDivisions;
-        for (let t = 0; t < numDivisions - 1; ++x) {
-            let normT = t / numDivisions;
-            // First height
-            let value0 = dataVertices[(numDivisions * x) + (t)];
-            // height forwards
-            let value1 = dataVertices[(numDivisions * (x + 1)) + (t)];
-            // height left
-            let value2 = dataVertices[(numDivisions * x) + (t) + 1];
-
-            let partialX = [1, value1 - value0, 0];
-            let partialT = [0, value2 - value0, 1];
-            let crossProduct = cross(partialX, partialT);
-            normals.push(crossProduct[0], crossProduct[1], crossProduct[2]);
+        for (let t = 0; t < numDivisions - 1; ++t) {
+            calculateNormal(dataVertices, numDivisions * x, (numDivisions * (x + 1)), t, t+1);
         }
+        calculateNormal(dataVertices, numDivisions * x, (numDivisions * (x + 1)), numDivisions - 1, numDivisions - 2);
     }
+    for (let t = 0; t < numDivisions - 1; ++t) {
+        calculateNormal(dataVertices, numDivisions * (numDivisions - 1), (numDivisions * (numDivisions - 2)), t, t+1);
+    }
+    calculateNormal(dataVertices, numDivisions * (numDivisions - 1), (numDivisions * (numDivisions - 2)), numDivisions - 1, numDivisions - 2);
     return normals;
 }
 
