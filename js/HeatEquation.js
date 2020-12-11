@@ -455,6 +455,12 @@ const meshVertexShader = `
         vec3 intermediate = (amount * red) + ((1.0 - amount) * blue);
         return intermediate;
     }
+    
+    vec3 quadraticInterpolation(vec3 start, vec3 end, vec3 control, float amount) {
+        vec3 left = mix(start, control, amount);
+        vec3 right = mix(control, end, amount);
+        return mix(left, right, amount);
+    }
         
     void main() {
         // Multiply the position by the matrix.
@@ -464,8 +470,13 @@ const meshVertexShader = `
         //v_color.y = 0.0;
         //v_color.z = .5;
         //v_color.w = 1.0;
+        vec3 hot = vec3(0.6, 0.0, 0.1);
+        vec3 cold = vec3(0.1, 0.1, 0.6);
+        vec3 medium = vec3(0.4, 0.8, 0.4);
 
-        v_color.rgb = lerpRedToBlue((a_position.y + .5));
+        //v_color.rgb = lerpRedToBlue((a_position.y + .5));
+        //v_color.rgb = mix(hot, cold, a_position.y + .5);
+        v_color.rgb = quadraticInterpolation(cold, hot, medium, a_position.y + .5); 
         v_color.a = 1.0;
     }
 `;
