@@ -16,7 +16,7 @@ function initializeRenderer() {
     let initialDistribution = generateInitialDistributionDebug();
     let numCoefficients = 100;
     let fourierSeriesCoefficients = calculateFourierSeriesCoefficients(initialDistribution, numCoefficients);
-    let numDivisions = 100;
+    let numDivisions = 75;
     let meshPoints = generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions);
     //let meshPoints = generatePointsDebug(initialDistribution, numDivisions);
     let meshIndices = triangulateMesh(meshPoints, numDivisions);
@@ -114,8 +114,19 @@ function initializeRenderer() {
     requestAnimationFrame(drawScene);
 
     let worldMatrix = m4.identity();
+    let timeAdvancing = false;
+    let simulatorTime = 0;
+    let lastTime = 0;
     function drawScene(time) {
-        time *= 0.005;
+        if (timeAdvancing) {
+            simulatorTime += ((time - lastTime) * .0000005);
+            updateMesh(simulatorTime);
+        } else {
+            lastTime = time;
+        }
+        let timeText = document.getElementById("current-time");
+        timeText.innerText = simulatorTime.toFixed(5);
+
 
         webglUtils.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -219,20 +230,23 @@ function initializeRenderer() {
     function decreaseCoefficients() {
         let coefficientsText = document.getElementById("num-coefficients-text");
         --numCoefficients;
-        updateMesh();
+        if (numCoefficients < 0) {
+            numCoefficients = 0;
+        }
+        updateMesh(simulatorTime);
         coefficientsText.innerText = numCoefficients.toString();
     }
 
     function increaseCoefficients() {
         let coefficientsText = document.getElementById("num-coefficients-text");
         ++numCoefficients;
-        updateMesh();
+        updateMesh(simulatorTime);
         coefficientsText.innerText = numCoefficients.toString();
     }
 
-    function updateMesh() {
+    function updateMesh(initialTime) {
         fourierSeriesCoefficients = calculateFourierSeriesCoefficients(initialDistribution, numCoefficients);
-        meshPoints = generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions);
+        meshPoints = generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions, initialTime);
         meshIndices = triangulateMesh(meshPoints, numDivisions);
         normals = generateNormals(meshPoints, numDivisions);
         arrays = {
@@ -252,11 +266,42 @@ function initializeRenderer() {
         objectsToDraw[2].bufferInfo = gridBufferInfo;
     }
 
-    let coefficientSubtractor = document.getElementById("coefficient-subtract")
+    function refreshSimulation() {
+        timeAdvancing = !timeAdvancing;
+        if (timeAdvancing) {
+            simulatorButton.innerText = "Pause Simulation";
+        } else {
+            simulatorButton.innerText = "Start Simulation";
+        }
+    }
+
+    function decreaseTime() {
+        simulatorTime -= .25;
+        if (simulatorTime < 0) {
+            simulatorTime = 0;
+        }
+        updateMesh(simulatorTime);
+    }
+
+    function increaseTime() {
+        simulatorTime += .25;
+        updateMesh(simulatorTime);
+    }
+
+    let coefficientSubtractor = document.getElementById("coefficient-subtract");
     coefficientSubtractor.addEventListener("click", decreaseCoefficients);
 
-    let coefficientAdder = document.getElementById("coefficient-add")
+    let coefficientAdder = document.getElementById("coefficient-add");
     coefficientAdder.addEventListener("click", increaseCoefficients);
+
+    let simulatorButton = document.getElementById("simulate-button");
+    simulatorButton.addEventListener("click", refreshSimulation);
+
+    let timeSubtractor = document.getElementById("time-subtract");
+    timeSubtractor.addEventListener("click", decreaseTime);
+
+    let timeAdder = document.getElementById("time-add");
+    timeAdder.addEventListener("click", increaseTime);
 
     /* eslint brace-style: 0 */
     gl.canvas.addEventListener('mousedown', (e) => { e.preventDefault(); startRotateCamera(e); });
@@ -428,7 +473,7 @@ function generatePointsDebug(initialDistribution, numDivisions) {
     return vertices;
 }
 
-function generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions, diffusivity = .6) {
+function generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions, initialTime = 0, diffusivity = .15) {
     let vertices = [];
     for (let x = 0; x < numDivisions; ++x) {
         let normX = x / numDivisions;
@@ -440,7 +485,7 @@ function generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisio
                 let lambda = (n * Math.PI);
                 let a = fourierSeriesCoefficients[n];
                 let k = diffusivity;
-                partialSum += a * Math.cos(lambda * normX) * Math.exp(-lambda * lambda * k * normT);
+                partialSum += a * Math.cos(lambda * normX) * Math.exp(-lambda * lambda * k * (normT + initialTime));
             }
             vertices.push(partialSum / initialDistribution.length);
             vertices.push(normT - .5);
