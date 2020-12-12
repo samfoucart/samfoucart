@@ -36,13 +36,13 @@ function initializeRenderer() {
     }
     let gridBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
 
-    let cylinderArrays = createRodArrays(initialDistribution, 1, 100);
+    let cylinderArrays = createRodArrays(initialDistribution, 15, 10);
     let cylinderBufferInfo = webglUtils.createBufferInfoFromArrays(gl, cylinderArrays);
 
     let sphereProgramInfo = webglUtils.createProgramInfo(gl, [sphereVertexShader, sphereFragmentShader]);
     let meshProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
     let gridProgramInfo = webglUtils.createProgramInfo(gl, [gridVertexShader, gridFragmentShader]);
-    let cylinderProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
+    let cylinderProgramInfo = webglUtils.createProgramInfo(gl, [rodVertexShader, rodFragmentShader]);
 
     let cameraAngleRadians = 0.0;
     let fieldOfViewRadians = Math.PI / 3;
@@ -98,6 +98,7 @@ function initializeRenderer() {
             programInfo: cylinderProgramInfo,
             bufferInfo: cylinderBufferInfo,
             uniforms: rodUniforms,
+            //primitive: gl.LINES,
         }
     ];
 
@@ -148,6 +149,7 @@ function initializeRenderer() {
         meshUniforms.u_worldViewProjection = sphereMatrix;
         m4.transpose(m4.inverse(worldMatrix), meshUniforms.u_worldInverseTranspose);
         gridUniforms.u_matrix = sphereMatrix;
+        rodUniforms.u_matrix = sphereMatrix;
 
         objectsToDraw.forEach((object) => {
             let programInfo = object.programInfo;
@@ -325,19 +327,46 @@ const v2 = (function() {
 
 function createRodArrays(displayDistribution, degreeIncrements, heightIncrements) {
     let vertices = [];
+    let indices = [];
     for (let h = 0; h < heightIncrements; ++h) {
         let normH = h / heightIncrements;
-        for (let theta = 0; theta < 360; theta += degreeIncrements) {
-            let xPosition = Math.cos(theta * Math.PI / 180);
-            let zPosition = Math.sin(theta * Math.PI / 180);
+        for (let theta = 0; theta < degreeIncrements; ++theta) {
+            let normTheta = theta * 360 / degreeIncrements;
+            let xPosition = Math.cos(normTheta * Math.PI / 180.0);
+            let zPosition = Math.sin(normTheta * Math.PI / 180.0);
             vertices.push(xPosition);
             vertices.push(normH);
             vertices.push(zPosition);
         }
     }
+
+    for (let h = 0; h < heightIncrements - 1; ++h) {
+        let normH = h / heightIncrements;
+        for (let theta = 0; theta < degreeIncrements - 1; ++theta) {
+            // Note: for the surface to be visible on both sides, we require a triangle on each side of the surface
+            // Triangle 1
+            indices.push((degreeIncrements * h) + theta);
+            indices.push((degreeIncrements * (h + 1)) + (theta + 1));
+            indices.push((degreeIncrements * h) + (theta + 1));
+            // Triangle 2
+            indices.push((degreeIncrements * h) + theta);
+            indices.push((degreeIncrements * (h + 1)) + (theta));
+            indices.push((degreeIncrements * (h + 1)) + (theta + 1));
+        }
+        // Triangle 1
+        indices.push((degreeIncrements * h) + degreeIncrements - 1);
+        indices.push((degreeIncrements * (h + 1)));
+        indices.push((degreeIncrements * h));
+        // Triangle 2
+        indices.push((degreeIncrements * h) + degreeIncrements - 1);
+        indices.push((degreeIncrements * (h + 1)) + degreeIncrements - 1);
+        indices.push((degreeIncrements * (h + 1)));
+    }
+
     return {
         position: {numComponents: 3, data: vertices},
         distribution: {numComponents: 1, data: displayDistribution},
+        indices: {numComponents: 3, data: indices},
     }
 }
 
@@ -532,6 +561,43 @@ const gridVertexShader = `
         // Multiply the position by the matrix.
         gl_Position = u_matrix * a_position;
 
+    }
+`;
+
+const rodFragmentShader = `
+    precision mediump float;
+    
+    varying vec4 v_color;
+    
+    void main () {
+        gl_FragColor = v_color;
+    }
+`;
+
+const rodVertexShader = `
+    attribute vec4 a_position;
+    attribute float a_distribution;
+
+    uniform mat4 u_matrix;
+    
+    varying vec4 v_color;
+    
+    vec3 quadraticInterpolation(vec3 start, vec3 end, vec3 control, float amount) {
+        vec3 left = mix(start, control, amount);
+        vec3 right = mix(control, end, amount);
+        return mix(left, right, amount);
+    }
+     
+    void main() {
+        // Multiply the position by the matrix.
+        gl_Position = u_matrix * a_position;
+        
+        vec3 hot = vec3(0.6, 0.0, 0.1);
+        vec3 cold = vec3(0.1, 0.1, 0.6);
+        vec3 medium = vec3(0.4, 0.8, 0.4);
+
+        v_color.rgb = quadraticInterpolation(cold, hot, medium, a_distribution + .5); 
+        v_color.a = 1.0;
     }
 `;
 
