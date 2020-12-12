@@ -20,9 +20,11 @@ function initializeRenderer() {
     let meshPoints = generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions);
     //let meshPoints = generatePointsDebug(initialDistribution, numDivisions);
     let meshIndices = triangulateMesh(meshPoints, numDivisions);
+    let normals = generateNormals(meshPoints, numDivisions);
     let arrays = {
         position: {numComponents: 3, data: meshPoints},
         indices: {numComponents: 3, data: meshIndices},
+        normal: {numComponents: 3, data: normals},
     }
     let meshBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
 
@@ -41,7 +43,7 @@ function initializeRenderer() {
 
     let sphereProgramInfo = webglUtils.createProgramInfo(gl, [sphereVertexShader, sphereFragmentShader]);
     let meshProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
-    let gridProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
+    let gridProgramInfo = webglUtils.createProgramInfo(gl, [gridVertexShader, gridFragmentShader]);
 
     let cameraAngleRadians = 0.0;
     let fieldOfViewRadians = Math.PI / 3;
@@ -54,8 +56,15 @@ function initializeRenderer() {
     }
 
     let meshUniforms = {
-        u_colorMult: [1, 1, 1, 1],
-        u_matrix: m4.identity(),
+        u_lightWorldPos: [0, .5, 0],
+        u_viewInverse: m4.identity(),
+        u_lightColor: [1, 1, 1, 1],
+        u_worldViewProjection: m4.identity(),
+        u_world: m4.identity(),
+        u_worldInverseTranspose: m4.identity(),
+        u_specular: [1, 1, 1, 1],
+        u_shininess: 1000,
+        u_specularFactor: .9,
     }
 
     let gridUniforms = {
@@ -110,10 +119,10 @@ function initializeRenderer() {
         let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
         let projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, .2, 2000);
 
-        let cameraPosition = [0, 0, 2];
+        let cameraPosition = [0, 0, -2];
         let target = [0, 0, 0];
         let up = [0, 1, 0];
-        let cameraMatrix = m4.lookAt(cameraPosition, target, up);
+        let cameraMatrix = m4.lookAt(cameraPosition, target, up, meshUniforms.u_viewInverse);
 
         let viewMatrix = m4.inverse(cameraMatrix);
         //viewMatrix = m4.multiply(viewMatrix, worldMatrix);
@@ -127,6 +136,9 @@ function initializeRenderer() {
         //sphereMatrix = m4.multiply()
         sphereUniforms.u_matrix = sphereMatrix;
         meshUniforms.u_matrix = sphereMatrix;
+        meshUniforms.u_world = worldMatrix;
+        meshUniforms.u_worldViewProjection = sphereMatrix;
+        m4.transpose(m4.inverse(worldMatrix), meshUniforms.u_worldInverseTranspose);
         gridUniforms.u_matrix = sphereMatrix;
 
         objectsToDraw.forEach((object) => {
@@ -408,14 +420,14 @@ function generateNormals(dataVertices, numDivisions) {
             (vec1[0] * vec2[1]) - (vec1[1] * vec1[0])]
     }
     function calculateNormal(dataVertices, x, nextX, t, nextT) {
-        let value0 = dataVertices[x + t];
+        let value0 = dataVertices[(3 * (x + t)) + 1];
         // height forwards
-        let value1 = dataVertices[nextX + t];
+        let value1 = dataVertices[(3 * (nextX + t)) + 1];
         // height left
-        let value2 = dataVertices[x + nextT];
+        let value2 = dataVertices[(3 * (x + nextT)) + 1];
 
-        let partialX = [nextX - x, value1 - value0, 0];
-        let partialT = [0, value2 - value0, nextT - t];
+        let partialX = [nextX - x, (value1 - value0) / (nextX - x), 0];
+        let partialT = [0, (value2 - value0) / (nextX - x), nextT - t];
         let crossProduct = cross(partialX, partialT);
         let normCross = Math.sqrt((crossProduct[0] * crossProduct[0])
             + (crossProduct[1] * crossProduct[1])
@@ -471,9 +483,66 @@ const meshFragmentShader = `
     
     varying vec4 v_color;
     
-    uniform vec4 u_colorMult;
     void main () {
-        gl_FragColor = v_color * u_colorMult;
+        gl_FragColor = v_color;
+    }
+`;
+
+const gridFragmentShader = `
+    precision mediump float;
+    
+    varying vec4 v_color;
+    
+    void main () {
+        gl_FragColor = vec4(0, 0, 0, 1);
+    }
+`;
+
+const gridVertexShader = `
+    attribute vec4 a_position;
+
+    uniform mat4 u_matrix;
+     
+    void main() {
+        // Multiply the position by the matrix.
+        gl_Position = u_matrix * a_position;
+
+    }
+`;
+
+const meshFragmentShaderLighting = `
+    precision mediump float;
+ 
+    varying vec4 v_position;
+    varying vec3 v_normal;
+    varying vec3 v_surfaceToLight;
+    varying vec3 v_surfaceToView;
+    varying vec4 v_ambient;
+     
+    uniform vec4 u_lightColor;
+    uniform vec4 u_specular;
+    uniform float u_shininess;
+    uniform float u_specularFactor;
+     
+    vec4 lit(float l ,float h, float m) {
+      return vec4(1.0,
+                  max(l, 0.0),
+                  (l > 0.0) ? pow(max(0.0, h), m) : 0.0,
+                  1.0);
+    }
+     
+    void main() {
+      vec3 a_normal = normalize(v_normal);
+      vec3 surfaceToLight = normalize(v_surfaceToLight);
+      vec3 surfaceToView = normalize(v_surfaceToView);
+      vec3 halfVector = normalize(surfaceToLight + surfaceToView);
+      vec4 litR = lit(dot(a_normal, surfaceToLight),
+                        dot(a_normal, halfVector), u_shininess);
+      vec4 outColor = vec4((
+      u_lightColor * (litR.y * v_ambient +
+                    u_specular * litR.z * u_specularFactor)).rgb,
+          1);
+      gl_FragColor = outColor;
     }
 `;
 
@@ -483,13 +552,6 @@ const meshVertexShader = `
     uniform mat4 u_matrix;
     
     varying vec4 v_color;
-
-    vec3 lerpRedToBlue(float amount) {
-        vec3 red = vec3(.6, 0.0, 0.1);
-        vec3 blue = vec3(0.1, 0.1, .6);
-        vec3 intermediate = (amount * red) + ((1.0 - amount) * blue);
-        return intermediate;
-    }
     
     vec3 quadraticInterpolation(vec3 start, vec3 end, vec3 control, float amount) {
         vec3 left = mix(start, control, amount);
@@ -501,18 +563,51 @@ const meshVertexShader = `
         // Multiply the position by the matrix.
         gl_Position = u_matrix * a_position;
         
-        //v_color.x = .5;
-        //v_color.y = 0.0;
-        //v_color.z = .5;
-        //v_color.w = 1.0;
         vec3 hot = vec3(0.6, 0.0, 0.1);
         vec3 cold = vec3(0.1, 0.1, 0.6);
         vec3 medium = vec3(0.4, 0.8, 0.4);
 
-        //v_color.rgb = lerpRedToBlue((a_position.y + .5));
-        //v_color.rgb = mix(hot, cold, a_position.y + .5);
         v_color.rgb = quadraticInterpolation(cold, hot, medium, a_position.y + .5); 
         v_color.a = 1.0;
+    }
+`;
+
+const meshVertexShaderLighting = `
+    uniform mat4 u_worldViewProjection;
+    uniform vec3 u_lightWorldPos;
+    uniform mat4 u_world;
+    uniform mat4 u_viewInverse;
+    uniform mat4 u_worldInverseTranspose;
+     
+    attribute vec4 a_position;
+    attribute vec3 a_normal;
+     
+    varying vec4 v_position;
+    varying vec3 v_normal;
+    varying vec3 v_surfaceToLight;
+    varying vec3 v_surfaceToView;
+    varying vec4 v_ambient;
+    
+    vec3 quadraticInterpolation(vec3 start, vec3 end, vec3 control, float amount) {
+        vec3 left = mix(start, control, amount);
+        vec3 right = mix(control, end, amount);
+        return mix(left, right, amount);
+    }
+     
+    void main() {
+      vec3 hot = vec3(0.6, 0.0, 0.1);
+      vec3 cold = vec3(0.1, 0.1, 0.6);
+      vec3 medium = vec3(0.4, 0.8, 0.4);
+    
+      v_ambient.rgb = quadraticInterpolation(cold, hot, medium, a_position.y + .5); 
+      v_ambient.a = 1.0;
+      
+      
+      v_position = (u_worldViewProjection * a_position);
+      v_normal = (u_worldInverseTranspose * vec4(a_normal, 0)).xyz;
+      v_surfaceToLight = u_lightWorldPos - (u_world * a_position).xyz;
+      v_surfaceToView = (u_viewInverse[3] - (u_world * a_position)).xyz;
+      gl_Position = v_position;
     }
 `;
 
