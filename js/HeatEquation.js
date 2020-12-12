@@ -36,14 +36,13 @@ function initializeRenderer() {
     }
     let gridBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
 
-    let shapes = [
-        sphereBufferInfo,
-        meshBufferInfo,
-    ];
+    let cylinderArrays = createRodArrays(initialDistribution, 1, 100);
+    let cylinderBufferInfo = webglUtils.createBufferInfoFromArrays(gl, cylinderArrays);
 
     let sphereProgramInfo = webglUtils.createProgramInfo(gl, [sphereVertexShader, sphereFragmentShader]);
     let meshProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
     let gridProgramInfo = webglUtils.createProgramInfo(gl, [gridVertexShader, gridFragmentShader]);
+    let cylinderProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
 
     let cameraAngleRadians = 0.0;
     let fieldOfViewRadians = Math.PI / 3;
@@ -71,6 +70,10 @@ function initializeRenderer() {
         u_colorMult: [.25, .25, .25, 1],
         u_matrix: m4.identity(),
     }
+
+    let rodUniforms = {
+        u_matrix: m4.identity(),
+    }
     let sphereTranslation = [0, 5, 60];
 
     let objectsToDraw = [
@@ -78,7 +81,7 @@ function initializeRenderer() {
             programInfo: sphereProgramInfo,
             bufferInfo: sphereBufferInfo,
             uniforms: sphereUniforms,
-            primitive: gl.LINE_STRIP,
+            primitive: gl.LINES,
         },
         {
             programInfo: meshProgramInfo,
@@ -90,6 +93,11 @@ function initializeRenderer() {
             bufferInfo: gridBufferInfo,
             uniforms: gridUniforms,
             primitive: gl.LINES,
+        },
+        {
+            programInfo: cylinderProgramInfo,
+            bufferInfo: cylinderBufferInfo,
+            uniforms: rodUniforms,
         }
     ];
 
@@ -315,6 +323,23 @@ const v2 = (function() {
     };
 }());
 
+function createRodArrays(displayDistribution, degreeIncrements, heightIncrements) {
+    let vertices = [];
+    for (let h = 0; h < heightIncrements; ++h) {
+        let normH = h / heightIncrements;
+        for (let theta = 0; theta < 360; theta += degreeIncrements) {
+            let xPosition = Math.cos(theta * Math.PI / 180);
+            let zPosition = Math.sin(theta * Math.PI / 180);
+            vertices.push(xPosition);
+            vertices.push(normH);
+            vertices.push(zPosition);
+        }
+    }
+    return {
+        position: {numComponents: 3, data: vertices},
+        distribution: {numComponents: 1, data: displayDistribution},
+    }
+}
 
 function generatePointsDebug(initialDistribution, numDivisions) {
     let vertices = [];
