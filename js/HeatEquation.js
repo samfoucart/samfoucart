@@ -94,12 +94,14 @@ function initializeRenderer() {
             uniforms: gridUniforms,
             primitive: gl.LINES,
         },
+        /*
         {
             programInfo: cylinderProgramInfo,
             bufferInfo: cylinderBufferInfo,
             uniforms: rodUniforms,
             //primitive: gl.LINES,
         }
+         */
     ];
 
     function computeMatrix(viewProjectionMatrix, translation, xRotation, yRotation) {
@@ -213,6 +215,48 @@ function initializeRenderer() {
             (y - canvas.height / 2) / window.devicePixelRatio,
         ];
     }
+
+    function decreaseCoefficients() {
+        let coefficientsText = document.getElementById("num-coefficients-text");
+        --numCoefficients;
+        updateMesh();
+        coefficientsText.innerText = numCoefficients.toString();
+    }
+
+    function increaseCoefficients() {
+        let coefficientsText = document.getElementById("num-coefficients-text");
+        ++numCoefficients;
+        updateMesh();
+        coefficientsText.innerText = numCoefficients.toString();
+    }
+
+    function updateMesh() {
+        fourierSeriesCoefficients = calculateFourierSeriesCoefficients(initialDistribution, numCoefficients);
+        meshPoints = generateMesh(initialDistribution, fourierSeriesCoefficients, numDivisions);
+        meshIndices = triangulateMesh(meshPoints, numDivisions);
+        normals = generateNormals(meshPoints, numDivisions);
+        arrays = {
+            position: {numComponents: 3, data: meshPoints},
+            indices: {numComponents: 3, data: meshIndices},
+            normal: {numComponents: 3, data: normals},
+        }
+        meshBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
+        gridIndices = generateGridIndices(meshPoints, numDivisions);
+        //arrays.indices = {numComponents: 3, data:gridIndices};
+        arrays = {
+            position: {numComponents: 3, data: meshPoints},
+            indices: {numComponents: 3, data: gridIndices},
+        }
+        gridBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
+        objectsToDraw[1].bufferInfo = meshBufferInfo;
+        objectsToDraw[2].bufferInfo = gridBufferInfo;
+    }
+
+    let coefficientSubtractor = document.getElementById("coefficient-subtract")
+    coefficientSubtractor.addEventListener("click", decreaseCoefficients);
+
+    let coefficientAdder = document.getElementById("coefficient-add")
+    coefficientAdder.addEventListener("click", increaseCoefficients);
 
     /* eslint brace-style: 0 */
     gl.canvas.addEventListener('mousedown', (e) => { e.preventDefault(); startRotateCamera(e); });
@@ -596,7 +640,7 @@ const rodVertexShader = `
         vec3 cold = vec3(0.1, 0.1, 0.6);
         vec3 medium = vec3(0.4, 0.8, 0.4);
 
-        v_color.rgb = quadraticInterpolation(cold, hot, medium, a_distribution + .5); 
+        v_color.rgb = quadraticInterpolation(cold, hot, medium, a_position.y + .5); 
         v_color.a = 1.0;
     }
 `;

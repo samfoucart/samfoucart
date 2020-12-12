@@ -75,7 +75,7 @@ main {
 
 .top-nav li.introduction {
     float: left;
-    display: block; 
+    display: block;
     color: white;
     text-align: center;
     padding: 14px 16px;
@@ -98,6 +98,20 @@ canvas {
     display: block;
 }
 
+.HeatController {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.controller-item {
+    margin-left: 3vw;
+    margin-right: 3vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 
 @media screen and (max-width: 1080px) {
     .top-nav li {display: none;}
@@ -117,7 +131,7 @@ canvas {
         float: none;
         display: block;
     }
-    
+
     .responsive.nav-items .icon {
         display: block;
         float: right;
