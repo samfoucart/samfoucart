@@ -40,7 +40,7 @@ function initializeRenderer() {
     let cylinderBufferInfo = webglUtils.createBufferInfoFromArrays(gl, cylinderArrays);
 
     let sphereProgramInfo = webglUtils.createProgramInfo(gl, [sphereVertexShader, sphereFragmentShader]);
-    let meshProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShader, meshFragmentShader]);
+    let meshProgramInfo = webglUtils.createProgramInfo(gl, [meshVertexShaderLighting, meshFragmentShaderLighting]);
     let gridProgramInfo = webglUtils.createProgramInfo(gl, [gridVertexShader, gridFragmentShader]);
     let cylinderProgramInfo = webglUtils.createProgramInfo(gl, [rodVertexShader, rodFragmentShader]);
 
