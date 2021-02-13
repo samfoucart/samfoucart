@@ -34,43 +34,10 @@
             <p>Hello ;)</p>
         </div>
         <div class="content-body">
-            <div id="WebGL-div">
-                <h1>WebGL Single Dimensional Heat Equation Visualization</h1>
-                <canvas id="WebGL-canvas"></canvas>
-                <div class="HeatController">
-                    <div class="controller-item">
-                        <button id="coefficient-subtract">-</button>
-                        <p>Number of Fourier Series Coefficients: </p>
-                        <p id="num-coefficients-text">100</p>
-                        <button id="coefficient-add">+</button>
-                    </div>
-                    <div class="controller-item">
-                        <button id="time-subtract">-</button>
-                        <p>Current Time: </p>
-                        <p id="current-time">0</p>
-                        <button id="time-add">+</button>
-                    </div>
-                    <div class="controller-item">
-                        <button id="simulate-button">Start Simulation</button>
-                    </div>
-                </div>
-                <i>This project is a visualization of the Fourier series solution to the single dimensional heat equation along a rod. The mesh is generated and shaded using WebGL.</i>
-                <p>Click and drag on the mesh to view from different angles.</p>
-                <p>Source code is available at:</p>
-                <a href="https://github.com/samfoucart/samfoucart">https://github.com/samfoucart/samfoucart</a>
-                <h2>References:</h2>
-                <p>[1] Gregg Tavares. "WebGL Fundamentals" https://webglfundamentals.org/ , https://github.com/gfxfundamentals/webgl-fundamentals , Accessed November 2020</p>
-                <p>[2] David L. Powers. "Boundary Value Problems:  and Partial Differential Equations." Academic Press, 2006.</p>
-                <p>[3] Edward Angel and Dave Shreiner. "Interactive Computer Graphics: A Top-Down Approach with OpenGL" Sixth Edition, Addison-Wesley. 2012</p>
-                <p>[4] Pavel Dobryakov. "WebGL Fluid Simulation" https://github.com/PavelDoGreat/WebGL-Fluid-Simulation</p>
-            </div>
+            <iframe id="project_iframe" src="https://samfoucart.github.io/Fourier-Series-Visualization/index.html" width="100%" style="border:none; overflow: auto"></iframe>
         </div>
     </main>
 
-    <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
-    <script src="https://webglfundamentals.org/webgl/resources/m4.js"></script>
-    <script src="https://webglfundamentals.org/webgl/resources/primitives.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/HeatEquation.js"></script>
 </body>
 </html>

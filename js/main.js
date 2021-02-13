@@ -8,3 +8,12 @@ function topNavOverflow() {
     }
 }
 
+window.onmessage = (e) => {
+    if (e.data.hasOwnProperty("frameHeight")) {
+        document.getElementById("project_iframe").style.height = `${e.data.frameHeight + 30}px`;
+    }
+};
+
+window.onresize = () => {
+    console.log("onresize")
+}
