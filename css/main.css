@@ -89,7 +89,17 @@ main {
 }
 
 .content-body {
-    padding: 20px;
+    padding-top: 20px;
+    width: 90%;
+    max-width: 1024px;
+    margin: 0 auto;
+
+}
+
+.heading {
+    background: #D2A3A9;
+    margin: 0;
+    width: 100%;
 }
 
 @media screen and (max-width: 1080px) {
