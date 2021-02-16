@@ -92,27 +92,6 @@ main {
     padding: 20px;
 }
 
-canvas {
-    width: 100vw;
-    height: 50vh;
-    display: block;
-}
-
-.HeatController {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.controller-item {
-    margin-left: 3vw;
-    margin-right: 3vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-
 @media screen and (max-width: 1080px) {
     .top-nav li {display: none;}
     .introduction {float: left;}
