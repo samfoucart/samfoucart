@@ -112,6 +112,14 @@ main {
     height: 128px;
 }
 
+.project-thumbnail {
+    width: 64px; 
+    height: 128px;
+    display: block; 
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* Hide the link that should open and close the topnav on small screens */
 .top-nav .icon {
     display: none;
