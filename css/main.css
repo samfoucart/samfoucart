@@ -86,11 +86,7 @@ main {
 .project-item-div {
     margin: 10px;
     padding: 10px;
-    border-radius: 15px;
-    border-bottom-width: 1px;
-    border-bottom-style: outset;
-    border-top-width: 1px;
-    border-top-style: ridge;
+    border-radius: 5px;
     flex-direction: row;
     display: flex;
 }
@@ -109,6 +105,11 @@ main {
 
 .project-item-infotext {
     color: #111;
+}
+
+.project-image {
+    width: 128px;
+    height: 128px;
 }
 
 /* Hide the link that should open and close the topnav on small screens */
